@@ -1,10 +1,17 @@
 #!/bin/bash
 set -e
 
-echo "🎙️ Voice Pipeline starting..."
+echo "🗣️ Claw Voicebox starting..."
 echo "  STT: ${STT_PROVIDER:-whisper} (${WHISPER_MODEL:-small})"
-echo "  OpenClaw: ${OPENCLAW_GATEWAY_URL:-ws://host.docker.internal:18789}"
 echo "  TTS: ${TTS_PROVIDER:-edge} (${TTS_VOICE:-en-US-GuyNeural})"
-echo "  Mode: ${PIPELINE_MODE:-stream}"
+echo "  OpenClaw: ${OPENCLAW_GATEWAY_URL:-ws://host.docker.internal:18789}"
+echo "  Web UI: http://0.0.0.0:${PORT:-8080}"
 
-exec python pipeline.py "$@"
+# Default: run web server
+# Override: pass "pipeline" to run CLI mode instead
+if [ "$1" = "pipeline" ]; then
+    shift
+    exec python pipeline.py "$@"
+else
+    exec python web_server.py
+fi

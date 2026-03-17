@@ -1,15 +1,14 @@
 services:
-  voice-pipeline:
+  claw-voicebox:
     build: .
-    container_name: voice-pipeline
+    container_name: claw-voicebox
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "${PORT:-8080}:8080"
     devices:
-      - /dev/snd:/dev/snd  # audio devices for mic/speaker
+      - /dev/snd:/dev/snd  # audio devices for CLI microphone mode
     volumes:
       - ./data/output:/data/output
-    network_mode: host  # for OpenClaw gateway on localhost
-    # Or use bridge + host.docker.internal:
-    # network_mode: bridge
-    # extra_hosts:
-    #   - "host.docker.internal:host-gateway"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # reach OpenClaw on host
