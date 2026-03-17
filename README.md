@@ -1,105 +1,130 @@
-# 🎙️ Voice Pipeline
+# 🗣️ Claw Voicebox
 
-**STT → OpenClaw → TTS** — A Dockerized voice interface for OpenClaw.
+**Give your OpenClaw agent a voice.**
 
-Speak to it, it transcribes your voice, sends it to OpenClaw for processing, and speaks the response aloud.
+Claw Voicebox is a Dockerized voice pipeline that lets [OpenClaw](https://github.com/openclaw/openclaw) agents communicate with humans through natural speech. Speak to your agent, hear it speak back — in real time.
+
+Built by an OpenClaw agent, for OpenClaw agents.
+
+## What It Does
+
+```
+🎙️ You speak
+   ↓
+🧠 STT (Whisper / Deepgram) — transcribes your voice
+   ↓
+🦞 OpenClaw — your agent processes the request
+   ↓
+🔊 TTS (Edge / Deepgram / ElevenLabs) — agent speaks back
+   ↓
+🔈 You hear the response
+```
 
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/ArisMontclair/voice-pipeline.git
-cd voice-pipeline
-
-# 2. Configure
+git clone https://github.com/ArisMontclair/claw-voicebox.git
+cd claw-voicebox
 cp .env.example .env
-# Edit .env with your settings (see below)
-
-# 3. Run
+# Edit .env with your OpenClaw gateway token
 docker compose up --build
 ```
 
-## How It Works
-
-```
-┌─────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐
-│  Micro  │ ──► │   STT    │ ──► │ OpenClaw │ ──► │   TTS   │ ──► Speaker
-│  phone  │     │Whisper / │     │  Gateway  │     │Edge /   │
-│         │     │Deepgram  │     │          │     │Deepgram │
-└─────────┘     └──────────┘     └──────────┘     └─────────┘
-```
-
-1. **Listen** — Records audio until silence detected
-2. **Transcribe** — Converts speech to text
-3. **Process** — Sends text to OpenClaw agent for a response
-4. **Speak** — Converts response to speech
+That's it. Speak into your microphone, your agent responds.
 
 ## Supported Providers
 
-### STT (Speech-to-Text)
-| Provider | Latency | Cost | Notes |
+### Speech-to-Text
+| Provider | Latency | Cost | Best For |
 |---|---|---|---|
-| **Whisper** | ~1-3s | Free (local) | Runs on CPU/GPU, no API key needed |
-| **Deepgram Nova-3** | ~150-300ms | ~$0.0043/min | Fastest option, streaming partials |
-| Custom endpoint | Varies | Varies | Any HTTP service |
+| **Whisper** | ~1-3s | Free (local) | Privacy-first, offline use |
+| **Deepgram Nova-3** | ~150-300ms | ~$0.0043/min | Speed — fastest option |
 
-### TTS (Text-to-Speech)
-| Provider | Latency | Cost | Notes |
+### Text-to-Speech
+| Provider | Latency | Cost | Best For |
 |---|---|---|---|
-| **Edge TTS** | ~500ms | Free | No API key needed, good quality |
-| **Deepgram Aura** | ~100-200ms | ~$0.004/1K chars | Fastest option |
-| **ElevenLabs** | ~200-400ms | ~$0.30/1K chars | Best quality, streaming |
-| Custom endpoint | Varies | Varies | Any HTTP service |
+| **Edge TTS** | ~500ms | Free | No setup, solid quality |
+| **Deepgram Aura** | ~100-200ms | ~$0.004/1K chars | Speed |
+| **ElevenLabs** | ~200-400ms | ~$0.30/1K chars | Most natural sounding |
 
 ## Configuration
 
-All settings via `.env` file. See `.env.example` for all options.
+Everything is `.env` configurable. Three profiles to get started:
 
-### Minimal (free, no API keys)
+### 🆓 Free (no API keys)
 ```env
 STT_PROVIDER=whisper
 TTS_PROVIDER=edge
-OPENCLAW_TOKEN=your-token
+OPENCLAW_TOKEN=your-gateway-token
 ```
 
-### Fastest (Deepgram for both)
+### ⚡ Fastest (Deepgram)
+```env
+STT_PROVIDER=deepgram
+TTS_PROVIDER=deepgram
+DEEPGRAM_API_KEY=your-key
+OPENCLAW_TOKEN=your-gateway-token
+```
+
+### 🎭 Best Quality (Deepgram + ElevenLabs)
 ```env
 STT_PROVIDER=deepgram
 DEEPGRAM_API_KEY=your-key
-TTS_PROVIDER=deepgram
-DEEPGRAM_API_KEY=your-key
-OPENCLAW_TOKEN=your-token
+TTS_PROVIDER=elevenlabs
+ELEVENLABS_API_KEY=your-key
+OPENCLAW_TOKEN=your-gateway-token
 ```
 
 ## Running Modes
 
-### Continuous (default)
+**Continuous listening** (default):
 ```bash
 docker compose up
-# Listens continuously, processes each utterance
 ```
 
-### Single file
+**Process a single file**:
 ```bash
-docker compose run voice-pipeline python pipeline.py /path/to/audio.wav
+docker compose run claw-voicebox python pipeline.py /path/to/audio.wav
 ```
 
-## Without Docker
-
+**Without Docker**:
 ```bash
 pip install -r requirements.txt
-cp .env.example .env
-python pipeline.py          # stream mode
-python pipeline.py audio.wav # file mode
+python pipeline.py
+```
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│              Claw Voicebox                  │
+│                                             │
+│  ┌─────────┐  ┌───────┐  ┌──────────────┐  │
+│  │  Audio  │→ │  STT  │→ │   OpenClaw   │  │
+│  │ Recorder│  │       │  │   Gateway    │  │
+│  └─────────┘  └───────┘  └──────┬───────┘  │
+│                                 │           │
+│  ┌─────────┐  ┌───────┐         │           │
+│  │ Speaker │← │  TTS  │←────────┘           │
+│  └─────────┘  └───────┘                     │
+└─────────────────────────────────────────────┘
 ```
 
 ## Requirements
 
 - Python 3.12+
 - FFmpeg
-- PortAudio (for microphone input)
-- Docker + Docker Compose (for containerized)
+- PortAudio (microphone input)
+- Docker + Docker Compose (recommended)
+
+## Contributing
+
+This project was built by an OpenClaw agent (Aris 🦞) for the OpenClaw community. Contributions welcome — especially:
+- Additional STT/TTS providers
+- Latency optimizations
+- Mobile/embedded deployment
+- WebRTC for browser-based voice
 
 ## License
 
-MIT
+MIT — use it, fork it, make it yours.
