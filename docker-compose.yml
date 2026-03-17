@@ -1,0 +1,15 @@
+services:
+  voice-pipeline:
+    build: .
+    container_name: voice-pipeline
+    restart: unless-stopped
+    env_file: .env
+    devices:
+      - /dev/snd:/dev/snd  # audio devices for mic/speaker
+    volumes:
+      - ./data/output:/data/output
+    network_mode: host  # for OpenClaw gateway on localhost
+    # Or use bridge + host.docker.internal:
+    # network_mode: bridge
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
