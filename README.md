@@ -13,7 +13,7 @@ cd voice-pipeline
 
 # 2. Configure
 cp .env.example .env
-# Edit .env with your OpenClaw gateway URL and token
+# Edit .env with your settings (see below)
 
 # 3. Run
 docker compose up --build
@@ -22,31 +22,54 @@ docker compose up --build
 ## How It Works
 
 ```
-┌─────────┐     ┌───────┐     ┌──────────┐     ┌─────┐
-│  Micro  │ ──► │  STT  │ ──► │ OpenClaw │ ──► │ TTS │ ──► Speaker
-│  phone  │     │Whisper│     │  Gateway  │     │Edge │
-└─────────┘     └───────┘     └──────────┘     └─────┘
+┌─────────┐     ┌──────────┐     ┌──────────┐     ┌─────────┐
+│  Micro  │ ──► │   STT    │ ──► │ OpenClaw │ ──► │   TTS   │ ──► Speaker
+│  phone  │     │Whisper / │     │  Gateway  │     │Edge /   │
+│         │     │Deepgram  │     │          │     │Deepgram │
+└─────────┘     └──────────┘     └──────────┘     └─────────┘
 ```
 
 1. **Listen** — Records audio until silence detected
-2. **Transcribe** — Converts speech to text (Whisper or remote STT)
+2. **Transcribe** — Converts speech to text
 3. **Process** — Sends text to OpenClaw agent for a response
-4. **Speak** — Converts response to speech (Edge TTS or custom)
+4. **Speak** — Converts response to speech
+
+## Supported Providers
+
+### STT (Speech-to-Text)
+| Provider | Latency | Cost | Notes |
+|---|---|---|---|
+| **Whisper** | ~1-3s | Free (local) | Runs on CPU/GPU, no API key needed |
+| **Deepgram Nova-3** | ~150-300ms | ~$0.0043/min | Fastest option, streaming partials |
+| Custom endpoint | Varies | Varies | Any HTTP service |
+
+### TTS (Text-to-Speech)
+| Provider | Latency | Cost | Notes |
+|---|---|---|---|
+| **Edge TTS** | ~500ms | Free | No API key needed, good quality |
+| **Deepgram Aura** | ~100-200ms | ~$0.004/1K chars | Fastest option |
+| **ElevenLabs** | ~200-400ms | ~$0.30/1K chars | Best quality, streaming |
+| Custom endpoint | Varies | Varies | Any HTTP service |
 
 ## Configuration
 
-All settings via `.env` file:
+All settings via `.env` file. See `.env.example` for all options.
 
-| Variable | Default | Description |
-|---|---|---|
-| `STT_PROVIDER` | `whisper` | `whisper` (local) or `custom` (remote) |
-| `WHISPER_MODEL` | `small` | Whisper model size: tiny/base/small/medium/large |
-| `OPENCLAW_GATEWAY_URL` | `ws://localhost:18789` | OpenClaw gateway WebSocket URL |
-| `OPENCLAW_TOKEN` | — | Gateway auth token |
-| `TTS_PROVIDER` | `edge` | `edge` (free, no key) or `custom` (remote) |
-| `TTS_VOICE` | `en-US-GuyNeural` | Edge TTS voice name |
-| `PIPELINE_MODE` | `stream` | `stream` (continuous) or `file` (single file) |
-| `SILENCE_THRESHOLD_MS` | `1500` | Silence duration before processing |
+### Minimal (free, no API keys)
+```env
+STT_PROVIDER=whisper
+TTS_PROVIDER=edge
+OPENCLAW_TOKEN=your-token
+```
+
+### Fastest (Deepgram for both)
+```env
+STT_PROVIDER=deepgram
+DEEPGRAM_API_KEY=your-key
+TTS_PROVIDER=deepgram
+DEEPGRAM_API_KEY=your-key
+OPENCLAW_TOKEN=your-token
+```
 
 ## Running Modes
 
